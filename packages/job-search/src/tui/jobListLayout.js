@@ -4,7 +4,7 @@ import { h } from './h.js';
 // Column gap between each column
 export const GAP = 2;
 
-export function useColumns(hasRerank, compact) {
+export function useColumns(hasRerank, compact, hasFacets) {
   const { stdout } = useStdout();
   const cols = stdout?.columns || 120;
   const available = compact ? Math.floor(cols * 0.4) : cols;
@@ -28,6 +28,7 @@ export function useColumns(hasRerank, compact) {
       scoreW,
       statusW,
       dossierW,
+      facetW: 0,
     };
   }
 
@@ -36,9 +37,12 @@ export function useColumns(hasRerank, compact) {
   const salaryW = 12;
   const statusW = 2;
   const cursorW = 2;
-  const gaps = GAP * (hasRerank ? 7 : 6);
+  // Compact facet chips column only when data exists and width allows.
+  const facetW = hasFacets && available >= 110 ? 11 : 0;
+  const gapCount = 6 + (hasRerank ? 1 : 0) + (facetW ? 1 : 0);
+  const gaps = GAP * gapCount;
   const fixed =
-    cursorW + scoreW + aiW + salaryW + dossierW + statusW + gaps + 2;
+    cursorW + scoreW + aiW + salaryW + facetW + dossierW + statusW + gaps + 2;
   const flex = Math.max(30, available - fixed);
   const titleW = Math.max(12, Math.floor(flex * 0.35));
   const compW = Math.max(10, Math.floor(flex * 0.3));
@@ -53,6 +57,7 @@ export function useColumns(hasRerank, compact) {
     statusW,
     dossierW,
     aiW,
+    facetW,
   };
 }
 
@@ -62,6 +67,7 @@ export function HeaderRow({
   titleW,
   compW,
   locW,
+  facetW,
   compact,
 }) {
   const scoreLabel = hasTiers ? 'Tier' : 'Score';
@@ -116,6 +122,13 @@ export function HeaderRow({
       { width: 12, marginRight: GAP },
       h(Text, { bold: true, dimColor: true }, 'Salary')
     ),
+    facetW
+      ? h(
+          Box,
+          { width: facetW, marginRight: GAP },
+          h(Text, { bold: true, dimColor: true }, 'Facets')
+        )
+      : null,
     h(
       Box,
       { width: 2, marginRight: GAP },

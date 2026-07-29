@@ -22,6 +22,8 @@ import SearchManager from './SearchManager.js';
 import StatusBar from './StatusBar.js';
 import AIPanel from './AIPanel.js';
 import HelpModal from './HelpModal.js';
+import TriageCard from './TriageCard.js';
+import { useTriage, triagedCount, triageSummary } from './useTriage.js';
 import { InlineSearch, SplitPane } from './SplitPane.js';
 import {
   TABS,
@@ -41,7 +43,7 @@ function App({ baseUrl, apiKey, apiClient }) {
     [baseUrl, apiKey, apiClient]
   );
 
-  // View: 'list' | 'detail' | 'filters' | 'searches' | 'ai' | 'help'
+  // View: 'list' | 'detail' | 'filters' | 'searches' | 'ai' | 'help' | 'triage'
   const [view, setView] = useState('list');
   const [tab, setTab] = useState('all');
   const [selectedJob, setSelectedJob] = useState(null);
@@ -197,6 +199,33 @@ function App({ baseUrl, apiKey, apiClient }) {
     }
   };
 
+  // Triage mode: card-by-card review of unmarked jobs. Marks reuse the same
+  // markJob mutation path as i/p, so persistence is identical (server/local);
+  // no per-card toast — the end-of-run summary covers it.
+  const triage = useTriage({
+    onMark: markJob,
+    onFinish: (final) => {
+      showToast(triageSummary(final), 'success');
+      triage.stop();
+      setView('list');
+    },
+  });
+  const handleTriageStart = () => {
+    const newJobs = jobs.filter((j) => !j.state);
+    if (!newJobs.length) {
+      showToast('No new jobs to triage', 'info');
+      return;
+    }
+    triage.start(newJobs);
+    setView('triage');
+  };
+  const handleTriageExit = () => {
+    const st = triage.state;
+    triage.stop();
+    setView('list');
+    if (st && triagedCount(st) > 0) showToast(triageSummary(st), 'info');
+  };
+
   const handleCreateSearch = async (name, prompt) => {
     const search = await searchesHook.create(name, prompt);
     setActiveSearchId(search.id);
@@ -244,9 +273,16 @@ function App({ baseUrl, apiKey, apiClient }) {
       setSearchQuery,
       setConfirmExit,
       handleDossier,
+      onTriage: handleTriageStart,
       nextTab,
     }),
-    { isActive: view !== 'filters' && view !== 'searches' && view !== 'help' }
+    {
+      isActive:
+        view !== 'filters' &&
+        view !== 'searches' &&
+        view !== 'help' &&
+        view !== 'triage',
+    }
   );
 
   const activeSearch = activeSearchId
@@ -403,6 +439,13 @@ function App({ baseUrl, apiKey, apiClient }) {
         })
       : null,
     view === 'help' ? h(HelpModal, { onClose: () => setView('list') }) : null,
+    view === 'triage' && triage.state && !triage.state.done
+      ? h(TriageCard, {
+          triage: triage.state,
+          onDecide: triage.decide,
+          onExit: handleTriageExit,
+        })
+      : null,
     statusBar
   );
 }

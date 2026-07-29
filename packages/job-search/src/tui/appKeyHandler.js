@@ -26,11 +26,14 @@ export function createAppKeyHandler(ctx) {
     setSearchQuery,
     setConfirmExit,
     handleDossier,
+    onTriage,
     nextTab,
   } = ctx;
 
   return (input, key) => {
     if (view === 'filters' || view === 'searches' || view === 'help') return;
+    // Triage view owns its keys (y/n/s/esc/q) via TriageCard.
+    if (view === 'triage') return;
     if (inlineSearch) return;
 
     if (input === 'q' && view === 'list') {
@@ -60,6 +63,9 @@ export function createAppKeyHandler(ctx) {
     if (input === 'n' && view === 'list') {
       setInlineSearch(true);
       setSearchQuery('');
+    }
+    if (input === 't' && (view === 'list' || view === 'detail') && onTriage) {
+      onTriage();
     }
 
     // Enter toggles detail panel

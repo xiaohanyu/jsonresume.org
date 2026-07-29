@@ -55,6 +55,15 @@ Carefully analyze the given job description and convert it into a structured JSO
    - Possible values: "Yes", "No", or null if not mentioned.
 
 9. **Equity**:
-   - Extract equity info if mentioned (e.g. "0.1-0.5%", "equity available", "stock options"). Set null if not mentioned.`;
+   - Extract equity info if mentioned (e.g. "0.1-0.5%", "equity available", "stock options"). Set null if not mentioned.
+
+10. **Facets — STRICT PROVENANCE DISCIPLINE**:
+   These power hard filters, so precision beats coverage. Unlike other fields, do NOT guess: use the "unspecified"/"absent" values when the post does not say.
+   - "remote_scope": "remote_global" ONLY if the post explicitly says worldwide/anywhere/global (or equivalent). Geo-fenced remote (US-only, EU, Americas, "US timezones") = "remote_region" with "remote_regions" listing the regions verbatim-ish (e.g. ["US"], ["EU"], ["Americas"]). Office required = "onsite"; mixed = "hybrid"; not stated = "unspecified".
+   - "timezone_range": only when stated (e.g. "UTC-8 to UTC-5", "±3h CET", "US timezones"); else null.
+   - "seniority": map the stated level: intern/junior/mid/senior/staff_plus (staff, principal)/lead_management (EM, head of, VP, CTO). Multiple roles at different levels = the most senior individual-contributor level mentioned. Not stated = "unspecified".
+   - "salary_provenance": "stated" ONLY if concrete numbers appear in the post; "inferred" if you estimated salary_structured from strong context (e.g. "competitive Bay Area salary"); "absent" if no salary signal at all.
+   - "visa_sponsorship": "yes"/"no" only when explicit; else "unspecified".
+   - "employment_type": "cofounder" for equity-only founding roles; otherwise map what is stated; not stated = "unspecified".`;
 
 module.exports = { getInstructions };

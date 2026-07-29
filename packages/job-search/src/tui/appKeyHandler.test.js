@@ -23,6 +23,7 @@ function makeCtx(overrides = {}) {
     setSearchQuery: vi.fn(),
     setConfirmExit: vi.fn(),
     handleDossier: vi.fn(),
+    onTriage: vi.fn(),
     nextTab,
     ...overrides,
   };
@@ -126,6 +127,24 @@ describe('createAppKeyHandler', () => {
     const ctx = makeCtx({ view: 'ai', selectedJob: { id: 1 } });
     createAppKeyHandler(ctx)('', { escape: true });
     expect(ctx.setView).toHaveBeenCalledWith('detail');
+  });
+
+  it('t starts triage from list and detail views', () => {
+    const ctx = makeCtx();
+    createAppKeyHandler(ctx)('t', noKey);
+    expect(ctx.onTriage).toHaveBeenCalledTimes(1);
+    const detailCtx = makeCtx({ view: 'detail' });
+    createAppKeyHandler(detailCtx)('t', noKey);
+    expect(detailCtx.onTriage).toHaveBeenCalledTimes(1);
+  });
+
+  it('ignores all input while in triage view (TriageCard owns keys)', () => {
+    const ctx = makeCtx({ view: 'triage' });
+    const handler = createAppKeyHandler(ctx);
+    handler('q', noKey);
+    handler('t', noKey);
+    expect(ctx.exit).not.toHaveBeenCalled();
+    expect(ctx.onTriage).not.toHaveBeenCalled();
   });
 
   it('Tab cycles forward and resets cursor', () => {

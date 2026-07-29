@@ -5,6 +5,12 @@ import {
   formatLocation,
   formatAge,
 } from '../formatters.js';
+import {
+  formatRemoteScope,
+  formatSeniority,
+  formatSalaryProvenance,
+  formatRepost,
+} from './facetChips.js';
 
 /**
  * Build the styled line list for the job detail pane.
@@ -15,6 +21,8 @@ import {
 export function buildDetailLines(d, job, state, isPanel) {
   const loc = formatLocation(d.location, d.remote);
   const sal = formatSalary(d.salary, d.salary_usd);
+  const facets = d.facets || job.facets;
+  const repost = d.repost || job.repost;
   const lines = [];
 
   // Title
@@ -32,6 +40,15 @@ export function buildDetailLines(d, job, state, isPanel) {
       italic: true,
     });
   }
+
+  // Facet chips (server may not send facets — chips simply don't render).
+  // Salary provenance rides on the 💰 meta row below instead of a chip.
+  const chips = [formatRemoteScope(facets), formatSeniority(facets)].filter(
+    Boolean
+  );
+  if (chips.length) lines.push({ text: chips.join('  ·  '), color: 'cyan' });
+  const repostChip = formatRepost(repost);
+  if (repostChip) lines.push({ text: repostChip, dimColor: true });
   lines.push({ text: '' });
 
   // Meta as key-value pairs
@@ -42,7 +59,7 @@ export function buildDetailLines(d, job, state, isPanel) {
 
   const meta = [
     ['📍 Location', loc],
-    ['💰 Salary', sal],
+    ['💰 Salary', formatSalaryProvenance(sal, facets) || sal],
     ['📋 Type', d.type || '—'],
     ['📊 Experience', d.experience || '—'],
     ['📅 Posted', postedStr],

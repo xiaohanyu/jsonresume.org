@@ -177,7 +177,12 @@ export const runMatchPipeline = async ({
   }
 
   // Stable partition: confirmed-global first, other remote jobs as backfill.
-  const global = results.filter((j) => j.global_remote === true);
-  const backfill = results.filter((j) => j.global_remote !== true);
+  // Ingest-time facets (strict provenance) are the primary signal; the LLM
+  // classifier fills in for rows that predate facet extraction.
+  const isGlobal = (j) =>
+    j.facets?.remote_scope === 'remote_global' ||
+    (j.facets?.remote_scope == null && j.global_remote === true);
+  const global = results.filter(isGlobal);
+  const backfill = results.filter((j) => !isGlobal(j));
   return [...global, ...backfill].slice(0, top);
 };

@@ -47,6 +47,52 @@ const jobDescriptionSchema = z.object({
   experience: z.string().nullable(),
   education: z.string().nullable(),
   application: z.string().nullable(),
+  facets: z
+    .object({
+      remote_scope: z
+        .enum([
+          'onsite',
+          'hybrid',
+          'remote_region',
+          'remote_global',
+          'unspecified',
+        ])
+        .nullable(),
+      remote_regions: z.array(z.string()).nullable(),
+      timezone_range: z.string().nullable(),
+      seniority: z
+        .enum([
+          'intern',
+          'junior',
+          'mid',
+          'senior',
+          'staff_plus',
+          'lead_management',
+          'unspecified',
+        ])
+        .nullable(),
+      salary_provenance: z.enum(['stated', 'inferred', 'absent']).nullable(),
+      visa_sponsorship: z.enum(['yes', 'no', 'unspecified']).nullable(),
+      employment_type: z
+        .enum([
+          'full_time',
+          'part_time',
+          'contract',
+          'internship',
+          'cofounder',
+          'unspecified',
+        ])
+        .nullable(),
+    })
+    .nullable(),
+});
+
+/**
+ * Facet-only schema for the cheap backfill pass (facet-backfill.js) —
+ * identical facet shape, no other fields.
+ */
+const facetsOnlySchema = z.object({
+  facets: jobDescriptionSchema.shape.facets,
 });
 
 /**
@@ -58,4 +104,8 @@ const jobDescriptionTool = {
   parameters: jobDescriptionSchema,
 };
 
-module.exports = { jobDescriptionSchema, jobDescriptionTool };
+module.exports = {
+  jobDescriptionSchema,
+  jobDescriptionTool,
+  facetsOnlySchema,
+};
