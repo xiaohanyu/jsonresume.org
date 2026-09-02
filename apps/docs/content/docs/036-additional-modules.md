@@ -411,19 +411,20 @@ Sources: `apps/registry/pages/api/samples/resume.js:1-12`, `apps/registry/app/ui
 
 ### `ApiKeysPage` (apps/registry/app/api-keys/page.js:6-125)
 
-**Purpose:** UI page for generating API keys for authenticated users.
+**Purpose:** UI page for creating and revoking API keys for the signed-in user.
 
 **Key behaviors:**
-- Accepts GitHub username input.
-- Sends POST request to `/api/v1/keys` to generate API key.
-- Displays loading, error, and success states.
-- Shows quick start instructions for CLI and Claude Code skill.
+- Requires a GitHub sign-in; keys are only ever issued for the signed-in account.
+- Sends requests to `/api/v1/keys` with the Supabase access token as a bearer.
+- Lists active keys and supports revoking them.
+- Shows a newly created key once, plus quick start instructions for the CLI and
+  Claude Code skill.
 
 ---
 
-### `handleSubmit` (apps/registry/app/api-keys/page.js:12-35)
+### `handleCreate` / `handleRevoke` (apps/registry/app/api-keys/page.js)
 
-**Purpose:** Handles form submission for API key generation.
+**Purpose:** Create a new API key for the signed-in user, and revoke an existing one.
 
 ---
 
