@@ -39,6 +39,15 @@ module.exports = {
       keywords: ['Express', 'REST APIs', 'Microservices'],
     },
   ],
+  facets: {
+    remote_scope: 'remote_region',
+    remote_regions: ['US', 'Canada'],
+    timezone_range: null,
+    seniority: 'senior',
+    salary_provenance: 'stated',
+    visa_sponsorship: 'unspecified',
+    employment_type: 'full_time',
+  },
   meta: {
     canonical: 'http://example.com/job-schema/v1',
     version: 'v1.0.0',

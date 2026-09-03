@@ -1,5 +1,21 @@
 # @jsonresume/jobs
 
+## 0.16.0
+
+### Minor Changes
+
+- 13f78c6: Triage mode and honest facets. Press `t` to y/n-triage new jobs card by card (marks feed the ranking's relevance feedback); job rows and detail panes now show facet chips — remote scope (global vs geo-fenced with regions), seniority, salary with `(stated)`/`(est.)` provenance — and a "still hiring · Nth month" badge on monthly reposts. Server-side: ingest-time structured facet extraction with strict provenance over the whole corpus, semantic repost dedup (families collapse to their newest post), and facet-aware remote filtering.
+
+## 0.15.0
+
+### Minor Changes
+
+- 8d9134b: Tier-based match experience: the TUI now groups jobs into Strong/Good/Stretch bands with colored tier chips (raw cosine numbers retired from the list), shows a grounded "Why: …" line per match in the detail pane, a "N jobs · X strong · Z new since last visit" digest header, and honest empty states that name the filters that eliminated everything. Server-side (registry): hybrid vector+full-text retrieval fused with RRF, listwise tiers + grounded reasons from the reranker, and Rocchio relevance feedback so interested/applied marks pull the ranking toward what you actually like.
+
+### Patch Changes
+
+- ef427fc: Match quality overhaul (client side): the CLI table and TUI list now display the score the server actually sorts by (decay/rerank blend) instead of raw similarity, the TUI runs its background AI rerank pass on every view (previously only custom searches), and `search` gains a `--fast` flag to skip reranking. Pairs with the registry-side ranking fixes: 300-candidate retrieval pool, 0.95/0.05 recency decay, deep (150-job) location-aware listwise reranking on by default, real min-salary filtering backed by normalized salary data, word-boundary keyword search, prompt-first HyDE for custom searches, and rate-limited resume-body matching.
+
 ## 0.14.4
 
 ### Patch Changes

@@ -152,6 +152,25 @@ jobs:
           echo "salaries_updated=${SALARIES_UPDATED}" >> $GITHUB_OUTPUT
           echo "::endgroup::"
 
+      # Collapse monthly "Who is Hiring" reposts into families and stamp
+      # repost metadata (family_id, months, first_posted, is_latest) into
+      # gpt_content. The matcher hides superseded instances; the surviving
+      # row carries the "still hiring · Nth month" signal.
+      - name: Dedup reposts
+        id: dedup
+        working-directory: apps/registry
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+        run: |
+          echo "::group::Repost dedup"
+          timeout 900 node scripts/jobs/dedup-jobs.js --days=150 2>&1 | tee dedup.log
+          FAMILIES_FOUND=$(grep -oP 'Families found: \K\d+' dedup.log || echo "0")
+          ROWS_MARKED=$(grep -oP 'Rows marked: \K\d+' dedup.log || echo "0")
+          echo "families_found=${FAMILIES_FOUND}" >> $GITHUB_OUTPUT
+          echo "rows_marked=${ROWS_MARKED}" >> $GITHUB_OUTPUT
+          echo "::endgroup::"
+
       - name: Generate workflow summary
         if: always()
         run: |
@@ -224,6 +243,7 @@ jobs:
             apps/registry/fetch.log
             apps/registry/process.log
             apps/registry/vectorize.log
+            apps/registry/dedup.log
           retention-days: 30
 
       - name: Create issue on repeated failure

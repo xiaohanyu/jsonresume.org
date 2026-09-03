@@ -23,6 +23,7 @@ const SECTIONS = [
       ['m', 'Mark maybe'],
       ['p', 'Mark passed'],
       ['v', 'Toggle batch selection'],
+      ['t', 'Triage new jobs (y/n/s per card)'],
     ],
   },
   {

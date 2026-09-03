@@ -57,10 +57,37 @@ export function buildKeywordPredicate(query) {
 }
 
 /**
+ * Remote predicate. Prefers the ingest-time facets (strict provenance:
+ * remote_scope is only "remote_global"/"remote_region" when the post says
+ * so) and falls back to the legacy coarse `remote` enum for rows that
+ * predate facet extraction.
+ */
+export function isRemoteJob(job) {
+  const scope = job.facets?.remote_scope;
+  if (scope && scope !== 'unspecified') {
+    return scope === 'remote_global' || scope === 'remote_region';
+  }
+  return job.remote === 'Full';
+}
+
+/**
+ * Repost-family dedup: keep only the newest instance of each family.
+ * scripts/jobs/dedup-jobs.js stamps `repost: { family_id, months,
+ * first_posted, is_latest }` into gpt_content; superseded instances
+ * (is_latest === false) are dropped here so the same ad reposted monthly
+ * surfaces once, carrying its months count ("still hiring · 3rd month").
+ * Rows WITHOUT repost metadata (pre-dedup corpus, eval fixtures) are
+ * treated as latest and kept.
+ */
+export function dropSupersededReposts(rows) {
+  return rows.filter((job) => job.repost?.is_latest !== false);
+}
+
+/**
  * Combined row filter for parsed job rows.
  * @param {Object} opts
  * @param {Object|null} opts.stateMap - job_id -> sentiment
- * @param {boolean} opts.remote - require remote === 'Full'
+ * @param {boolean} opts.remote - require a remote role (facet-aware)
  * @param {number} opts.minSalary - minimum salary in $k; fails closed on
  *   unknown salary unless includeUnknownSalary is set
  * @param {boolean} opts.includeUnknownSalary
@@ -79,7 +106,7 @@ export function buildJobFilter({
     if (stateMap && HIDDEN_STATES.has(job.state)) {
       return false;
     }
-    if (remote && job.remote !== 'Full') {
+    if (remote && !isRemoteJob(job)) {
       return false;
     }
     if (minSalary) {

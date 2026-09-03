@@ -14,12 +14,13 @@ You have the `@jsonresume/job-search` CLI. If it's not installed, run:
 npx @jsonresume/job-search help
 ```
 
-If `JSONRESUME_API_KEY` is not set, tell the user to generate one:
+If `JSONRESUME_API_KEY` is not set, tell the user to create one at
+https://jsonresume.org/api-keys — they sign in with GitHub, click **Create API
+key**, and copy it (it is shown only once). Keys are issued only for the account
+the user is signed in as, so there is no command you can run on their behalf.
 
 ```bash
-curl -s -X POST https://jsonresume.org/api/v1/keys \
-  -H 'Content-Type: application/json' \
-  -d '{"username":"YOUR_GITHUB_USERNAME"}'
+export JSONRESUME_API_KEY=jr_xxxxx
 ```
 
 CLI commands:

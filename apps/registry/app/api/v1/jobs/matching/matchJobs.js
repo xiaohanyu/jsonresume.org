@@ -12,7 +12,7 @@ import { logger } from '@/lib/logger';
 import { getSupabase } from './supabaseClient';
 import { timeDecayScore } from './vectorMath';
 import { rerankJobs } from './rerank';
-import { buildJobFilter } from './filters';
+import { buildJobFilter, dropSupersededReposts } from './filters';
 
 // Candidate pool floor. The RPC cut happens on RAW similarity before decay,
 // filters, and rerank get a say; a pool of top*5 starved every downstream
@@ -82,48 +82,54 @@ export async function matchJobs({
     search,
   });
 
-  let results = (jobs || [])
-    .map((job) => {
-      try {
-        const parsed = JSON.parse(job.gpt_content);
-        if (!parsed?.title || !parsed?.company) {
+  // Repost families collapse to their newest instance (dropSupersededReposts)
+  // — the surviving row's repost.months carries the "still hiring, Nth month"
+  // signal for clients.
+  let results = dropSupersededReposts(
+    (jobs || [])
+      .map((job) => {
+        try {
+          const parsed = JSON.parse(job.gpt_content);
+          if (!parsed?.title || !parsed?.company) {
+            return null;
+          }
+          const match = matched.find((m) => m.id === job.id);
+          const similarity = Number(match?.similarity) || 0;
+          const rrf = Number(match?.rrf_score) || 0;
+          const decayed =
+            Math.round(timeDecayScore(similarity, job.posted_at) * 1000) / 1000;
+          return {
+            rrf_score: rrf,
+            id: job.id,
+            uuid: job.uuid,
+            title: parsed.title,
+            company: parsed.company,
+            location: parsed.location,
+            remote: parsed.remote,
+            salary: parsed.salary,
+            salary_usd: job.salary_usd,
+            experience: parsed.experience,
+            type: parsed.type,
+            description: parsed.description,
+            skills: parsed.skills,
+            qualifications: parsed.qualifications,
+            responsibilities: parsed.responsibilities,
+            url: job.url,
+            posted_at: job.posted_at,
+            facets: parsed.facets || null,
+            repost: parsed.repost || null,
+            similarity: Math.round(similarity * 1000) / 1000,
+            decayed_similarity: decayed,
+            score: decayed,
+            state: stateMap?.[job.id] || null,
+          };
+        } catch {
           return null;
         }
-        const match = matched.find((m) => m.id === job.id);
-        const similarity = Number(match?.similarity) || 0;
-        const rrf = Number(match?.rrf_score) || 0;
-        const decayed =
-          Math.round(timeDecayScore(similarity, job.posted_at) * 1000) / 1000;
-        return {
-          rrf_score: rrf,
-          id: job.id,
-          uuid: job.uuid,
-          title: parsed.title,
-          company: parsed.company,
-          location: parsed.location,
-          remote: parsed.remote,
-          salary: parsed.salary,
-          salary_usd: job.salary_usd,
-          experience: parsed.experience,
-          type: parsed.type,
-          description: parsed.description,
-          skills: parsed.skills,
-          qualifications: parsed.qualifications,
-          responsibilities: parsed.responsibilities,
-          url: job.url,
-          posted_at: job.posted_at,
-          similarity: Math.round(similarity * 1000) / 1000,
-          decayed_similarity: decayed,
-          score: decayed,
-          state: stateMap?.[job.id] || null,
-        };
-      } catch {
-        return null;
-      }
-    })
-    .filter(Boolean)
-    .filter(rowFilter)
-    .sort((a, b) => b.decayed_similarity - a.decayed_similarity);
+      })
+      .filter(Boolean)
+      .filter(rowFilter)
+  ).sort((a, b) => b.decayed_similarity - a.decayed_similarity);
 
   // Rerank when explicitly requested or for search profiles.
   // The window is deliberately MUCH deeper than `top`: the raw vector

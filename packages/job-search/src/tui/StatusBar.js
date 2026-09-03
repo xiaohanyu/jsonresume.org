@@ -10,6 +10,7 @@ const KEYS = {
     ['m', 'maybe'],
     ['p', 'pass'],
     ['v', 'select'],
+    ['t', 'triage'],
     ['n', 'find'],
     ['space', 'AI'],
     ['c', 'dossier'],
@@ -49,6 +50,12 @@ const KEYS = {
     ['esc', 'back'],
   ],
   help: [['?/esc', 'close']],
+  triage: [
+    ['y', 'interested'],
+    ['n', 'pass'],
+    ['s', 'skip'],
+    ['esc', 'exit triage'],
+  ],
 };
 
 function KeyHint({ k, label }) {

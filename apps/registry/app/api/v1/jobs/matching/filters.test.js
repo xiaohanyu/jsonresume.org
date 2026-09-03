@@ -7,6 +7,7 @@ import {
   jobSearchText,
   buildKeywordPredicate,
   buildJobFilter,
+  dropSupersededReposts,
 } from './filters';
 import { weightedBlend } from './vectorMath';
 
@@ -84,11 +85,33 @@ describe('buildJobFilter min_salary', () => {
 });
 
 describe('buildJobFilter remote + hidden states', () => {
-  it('remote requires remote === Full', () => {
+  it('remote requires remote === Full (legacy rows without facets)', () => {
     const f = buildJobFilter({ remote: true });
     expect(f(job({ remote: 'Full' }))).toBe(true);
     expect(f(job({ remote: 'Hybrid' }))).toBe(false);
     expect(f(job({ remote: undefined }))).toBe(false);
+  });
+
+  it('facets.remote_scope wins over the legacy remote enum', () => {
+    const f = buildJobFilter({ remote: true });
+    // facet says geo-fenced remote, legacy enum missing → passes
+    expect(
+      f(job({ remote: undefined, facets: { remote_scope: 'remote_region' } }))
+    ).toBe(true);
+    expect(
+      f(job({ remote: undefined, facets: { remote_scope: 'remote_global' } }))
+    ).toBe(true);
+    // facet says hybrid even though legacy said Full → fails
+    expect(f(job({ remote: 'Full', facets: { remote_scope: 'hybrid' } }))).toBe(
+      false
+    );
+    expect(f(job({ remote: 'Full', facets: { remote_scope: 'onsite' } }))).toBe(
+      false
+    );
+    // unspecified facet falls back to legacy enum
+    expect(
+      f(job({ remote: 'Full', facets: { remote_scope: 'unspecified' } }))
+    ).toBe(true);
   });
 
   it('hides not_interested/dismissed only when a stateMap is present', () => {
@@ -97,6 +120,35 @@ describe('buildJobFilter remote + hidden states', () => {
     expect(withMap(job({ state: 'interested' }))).toBe(true);
     const noMap = buildJobFilter({});
     expect(noMap(job({ state: 'not_interested' }))).toBe(true);
+  });
+});
+
+describe('dropSupersededReposts', () => {
+  const repost = (over = {}) => ({
+    family_id: 1,
+    months: 3,
+    first_posted: '2026-05-01T12:00:00Z',
+    is_latest: true,
+    ...over,
+  });
+
+  it('drops superseded family members, keeps the newest', () => {
+    const rows = [
+      job({ id: 1, repost: repost({ is_latest: false }) }),
+      job({ id: 3, repost: repost({ is_latest: true }) }),
+      job({ id: 2, repost: repost({ is_latest: false }) }),
+    ];
+    expect(dropSupersededReposts(rows).map((j) => j.id)).toEqual([3]);
+  });
+
+  it('treats missing repost metadata as latest (eval fixtures, old rows)', () => {
+    const rows = [job({ id: 1 }), job({ id: 2, repost: null })];
+    expect(dropSupersededReposts(rows)).toHaveLength(2);
+  });
+
+  it('keeps a malformed repost object without is_latest', () => {
+    const rows = [job({ id: 1, repost: { family_id: 1 } })];
+    expect(dropSupersededReposts(rows)).toHaveLength(1);
   });
 });
 

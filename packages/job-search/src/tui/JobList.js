@@ -117,7 +117,12 @@ export default function JobList({
   const visible = rows.slice(scroll, scroll + visibleRows);
   const hasRerank = visible.some((r) => r.type === 'job' && r.job.rerank_score);
   const hasTiers = hasTierData(jobs);
-  const { cols, titleW, compW, locW } = useColumns(hasRerank, compact);
+  const hasFacets = jobs.some((j) => j.facets || j.repost);
+  const { cols, titleW, compW, locW, facetW } = useColumns(
+    hasRerank,
+    compact,
+    hasFacets
+  );
 
   const rendered = visible.map((row) =>
     row.type === 'separator'
@@ -132,6 +137,7 @@ export default function JobList({
           titleW,
           compW,
           locW,
+          facetW,
           compact,
           dossierStatus: getDossierStatus ? getDossierStatus(row.job.id) : null,
         })
@@ -148,7 +154,7 @@ export default function JobList({
   return h(
     Box,
     { flexDirection: 'column' },
-    h(HeaderRow, { hasRerank, hasTiers, titleW, compW, locW, compact }),
+    h(HeaderRow, { hasRerank, hasTiers, titleW, compW, locW, facetW, compact }),
     h(
       Box,
       { paddingX: 1 },

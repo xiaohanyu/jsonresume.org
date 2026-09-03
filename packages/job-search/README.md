@@ -49,19 +49,20 @@ jsonresume-jobs
 
 ## Authentication
 
-On first run, the CLI prompts for your GitHub username, verifies your resume exists on the registry, generates an API key, and saves it to `~/.jsonresume/config.json`. Future runs skip straight to the TUI.
+API keys are issued only to a signed-in GitHub account, so you create one in the browser and hand it to the CLI.
+
+1. Visit [jsonresume.org/api-keys](https://jsonresume.org/api-keys) and sign in with GitHub.
+2. Click **Create API key** and copy it — it is shown once.
+
+On first run the CLI prompts you to paste that key, verifies it, and saves it to `~/.jsonresume/config.json`. Future runs skip straight to the TUI.
 
 You can also authenticate manually:
 
 ```bash
-# Via environment variable
-export JSONRESUME_API_KEY=jr_yourname_xxxxx
-
-# Generate a key via curl
-curl -s -X POST https://registry.jsonresume.org/api/v1/keys \
-  -H 'Content-Type: application/json' \
-  -d '{"username":"YOUR_GITHUB_USERNAME"}'
+export JSONRESUME_API_KEY=jr_xxxxx
 ```
+
+Keys can be revoked at any time from the same page.
 
 To clear saved credentials:
 
@@ -277,16 +278,31 @@ All endpoints live at `https://registry.jsonresume.org/api/v1`. Authenticated en
 
 ### Authentication
 
-```bash
-# Generate an API key (no auth required)
-curl -s -X POST https://registry.jsonresume.org/api/v1/keys \
-  -H 'Content-Type: application/json' \
-  -d '{"username":"YOUR_GITHUB_USERNAME"}'
-# → { "key": "jr_username_xxxxx", "username": "username" }
+Create a key at [jsonresume.org/api-keys](https://jsonresume.org/api-keys) while
+signed in with GitHub. Keys are only ever issued for the account you are signed
+in as, so there is no anonymous way to mint one.
 
-# Use in all subsequent requests
-export JSONRESUME_API_KEY="jr_username_xxxxx"
+```bash
+export JSONRESUME_API_KEY="jr_xxxxx"
 AUTH="Authorization: Bearer $JSONRESUME_API_KEY"
+```
+
+Manage keys programmatically with a Supabase session token (this is what the
+website does — an API key cannot mint another API key):
+
+```bash
+SESSION="Authorization: Bearer $SUPABASE_ACCESS_TOKEN"
+
+curl -s -X POST -H "$SESSION" https://registry.jsonresume.org/api/v1/keys \
+  -H 'Content-Type: application/json' -d '{"name":"laptop"}'
+# → { "key": "jr_xxxxx", "username": "...", "id": "...", ... }
+
+curl -s -H "$SESSION" https://registry.jsonresume.org/api/v1/keys
+# → { "username": "...", "keys": [ { "id": "...", "key_prefix": "jr_xxxxxxxx", ... } ] }
+
+curl -s -X DELETE -H "$SESSION" https://registry.jsonresume.org/api/v1/keys \
+  -H 'Content-Type: application/json' -d '{"id":"KEY_ID"}'
+# → { "revoked": true, "id": "KEY_ID" }
 ```
 
 ### GET /api/v1/me

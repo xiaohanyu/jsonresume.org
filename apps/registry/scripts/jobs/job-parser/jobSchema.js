@@ -118,6 +118,68 @@ const jobSchema = {
         },
       },
     },
+    facets: {
+      type: 'object',
+      description:
+        'Hard-filter facets. STRICT provenance: use unspecified/absent when the post does not say — never guess.',
+      additionalProperties: false,
+      properties: {
+        remote_scope: {
+          type: 'string',
+          enum: [
+            'onsite',
+            'hybrid',
+            'remote_region',
+            'remote_global',
+            'unspecified',
+          ],
+          description:
+            'remote_global ONLY if explicitly worldwide/anywhere; geo-fenced remote = remote_region',
+        },
+        remote_regions: {
+          type: 'array',
+          items: { type: 'string' },
+          description:
+            'Regions when remote_region, e.g. ["US"], ["EU"], ["Americas"]',
+        },
+        timezone_range: {
+          type: 'string',
+          description: 'Only when stated, e.g. "UTC-8 to UTC-5"',
+        },
+        seniority: {
+          type: 'string',
+          enum: [
+            'intern',
+            'junior',
+            'mid',
+            'senior',
+            'staff_plus',
+            'lead_management',
+            'unspecified',
+          ],
+        },
+        salary_provenance: {
+          type: 'string',
+          enum: ['stated', 'inferred', 'absent'],
+          description: 'stated ONLY when concrete numbers appear in the post',
+        },
+        visa_sponsorship: {
+          type: 'string',
+          enum: ['yes', 'no', 'unspecified'],
+        },
+        employment_type: {
+          type: 'string',
+          enum: [
+            'full_time',
+            'part_time',
+            'contract',
+            'internship',
+            'cofounder',
+            'unspecified',
+          ],
+        },
+      },
+    },
     meta: {
       type: 'object',
       description:

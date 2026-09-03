@@ -9,6 +9,7 @@ import {
 } from '../formatters.js';
 import { GAP } from './jobListLayout.js';
 import { tierOf, tierChip } from './tierHelpers.js';
+import { formatRowChips } from './facetChips.js';
 
 // Dim gray band separator between tier groups, e.g. "── Strong matches ──".
 export function TierSeparator({ label }) {
@@ -41,6 +42,7 @@ export default function JobRow({
   titleW,
   compW,
   locW,
+  facetW,
   marked,
   compact,
   dossierStatus,
@@ -146,6 +148,17 @@ export default function JobRow({
       h(Text, props, truncate(age ? `${loc} · ${age}` : loc, locW - 1))
     ),
     h(Box, { width: 12, marginRight: GAP }, h(Text, props, truncate(sal, 11))),
+    facetW
+      ? h(
+          Box,
+          { width: facetW, marginRight: GAP },
+          h(
+            Text,
+            { ...props, dimColor: !selected },
+            truncate(formatRowChips(job), facetW - 1) || ' '
+          )
+        )
+      : null,
     h(
       Box,
       { width: 2, marginRight: GAP },
