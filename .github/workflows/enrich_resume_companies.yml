@@ -186,7 +186,14 @@ jobs:
 
       - name: Notify Discord on completion
         if: always()
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
         run: |
+          if [ -z "${DISCORD_WEBHOOK_URL}" ]; then
+            echo "::notice::DISCORD_WEBHOOK_URL is not configured; skipping Discord notification."
+            exit 0
+          fi
+
           # Determine status and emoji
           if [ "${{ job.status }}" == "success" ]; then
             STATUS_EMOJI="✅"
@@ -231,7 +238,7 @@ jobs:
                 \"url\": \"https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}\"
               }]
             }" \
-            https://discord.com/api/webhooks/1435731659541446678/p_19MdMzay79WDJ1g5EtfHAC5jAxG93nVMob0bUW4_Igyzl55fb-Uir8z1FpwZPx3bJf
+            "${DISCORD_WEBHOOK_URL}"
 
       - name: Create issue on repeated failure
         if: failure() && github.event_name == 'schedule'
